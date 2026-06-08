@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import { api } from '../../lib/api'
+import { FARM_STATUS, ASSESSMENT_CONDITION } from '../../lib/statuses'
 import 'leaflet/dist/leaflet.css'
 
 // Fix Leaflet default icon issue
@@ -32,15 +33,16 @@ const createIcon = (color) => L.divIcon({
 })
 
 const STATUS_COLORS = {
-  Pending: '#6b7280',
-  InProgress: '#3b82f6',
-  Completed: '#22c55e'
+  [FARM_STATUS.Pending]: '#6b7280',
+  [FARM_STATUS.PendingSync]: '#f59e0b',
+  [FARM_STATUS.InProgress]: '#3b82f6',
+  [FARM_STATUS.Completed]: '#22c55e'
 }
 
 const COND_COLORS = {
-  Good: '#22c55e',
-  Moderate: '#f59e0b',
-  Bad: '#ef4444'
+  [ASSESSMENT_CONDITION.Good]: '#22c55e',
+  [ASSESSMENT_CONDITION.Moderate]: '#f59e0b',
+  [ASSESSMENT_CONDITION.Bad]: '#ef4444'
 }
 
 export default function MapView() {

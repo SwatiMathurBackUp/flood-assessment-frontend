@@ -1,4 +1,5 @@
 import { getToken } from './auth'
+import { SYNC_STATUS } from './statuses'
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5167'
 
@@ -41,6 +42,45 @@ export const api = {
       return await getFarmsByAssignee(user.name)
     }
   },
+// Create new farm
+createFarm: async (farmData) => {
+  const response = await fetch(`${BASE_URL}/api/farm/create`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${getToken()}`
+    },
+    body: JSON.stringify(farmData)
+  })
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(error)
+  }
+  return response.json()
+},
+
+// Get list of assessors for assignment dropdown
+getAssessors: async () => {
+  const response = await fetch(`${BASE_URL}/api/user/assessors`, {
+    headers: { 'Authorization': `Bearer ${getToken()}` }
+  })
+  if (!response.ok) throw new Error('Failed to fetch assessors')
+  return response.json()
+},
+
+// Assign farm to assessor
+assignFarm: async (farmId, assessorUserId) => {
+  const response = await fetch(`${BASE_URL}/api/farm/${farmId}/assign`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${getToken()}`
+    },
+    body: JSON.stringify({ assessorUserId })
+  })
+  if (!response.ok) throw new Error('Failed to assign farm')
+  return response.json()
+},
 
   getAllFarms: async () => {
     try {
@@ -61,7 +101,7 @@ export const api = {
     }
   },
 
-  updateFarmStatus: async (farmId, status) => {
+  updateFarmStatus: async (farmId, status) => { debugger
     try {
       const response = await fetch(`${BASE_URL}/api/farm/${farmId}/status`, {
         method: 'PUT',
@@ -69,6 +109,7 @@ export const api = {
         body: JSON.stringify({ status })
       })
       if (!response.ok) throw new Error('Failed to update status')
+        debugger
       return response.json()
     } catch (err) {
       // Save locally for sync later
@@ -102,6 +143,12 @@ export const api = {
     })
     if (!response.ok) throw new Error('Sync failed')
     return response.json()
+  },
+
+  createAssessment: async (assessmentData) => {
+    const formData = new FormData()
+    formData.append('assessment', JSON.stringify(assessmentData))
+    return await api.syncAssessment(formData)
   },
 
   getAll: async () => {

@@ -5,14 +5,15 @@ import { reverseGeocode } from '../hooks/useGeolocation'
 import { getUser } from '../lib/auth'
 import { getDB } from '../lib/db'
 import { api } from '../lib/api'
+import { FARM_STATUS, ASSESSMENT_CONDITION, SYNC_STATUS } from '../lib/statuses'
 
 
 const CONDITIONS = [
-  { value: 'Good', color: 'border-green-500', text: 'text-green-400',
+  { value: ASSESSMENT_CONDITION.Good, color: 'border-green-500', text: 'text-green-400',
     dot: 'bg-green-500', desc: 'Minor or no damage, operational' },
-  { value: 'Moderate', color: 'border-yellow-500', text: 'text-yellow-400',
+  { value: ASSESSMENT_CONDITION.Moderate, color: 'border-yellow-500', text: 'text-yellow-400',
     dot: 'bg-yellow-500', desc: 'Partial damage, limited operation' },
-  { value: 'Bad', color: 'border-red-500', text: 'text-red-400',
+  { value: ASSESSMENT_CONDITION.Bad, color: 'border-red-500', text: 'text-red-400',
     dot: 'bg-red-500', desc: 'Severe damage, not operational' }
 ]
 
@@ -189,12 +190,12 @@ const loadExistingAssessment = async () => {
       await saveAssessment({
         ...form,
         chickenCount: parseInt(form.chickenCount) || 0,
-        syncStatus: 'pending'
+        syncStatus: SYNC_STATUS.Pending
       })
       // Update farm status to InProgress
       if (form.farmId) {
         try {
-          await api.updateFarmStatus(form.farmId, 'InProgress')
+          await api.updateFarmStatus(form.farmId, FARM_STATUS.InProgress)
         } catch { /* offline - ok */ }
       }
       onSave()
@@ -291,7 +292,7 @@ const loadExistingAssessment = async () => {
     // UPDATE FARM STATUS based on sync result
     if (form.farmId) {
       try {
-        const newStatus = synced ? 'Completed' : 'Pending'
+        const newStatus = synced ? FARM_STATUS.Completed : FARM_STATUS.PendingSync
         await api.updateFarmStatus(form.farmId, newStatus)
         console.log(`✓ Farm status updated to ${newStatus}`)
       } catch (err) {

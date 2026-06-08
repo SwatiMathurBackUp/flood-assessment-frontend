@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { getAllAssessments, deleteAssessment, getStats } from '../lib/db'
 import { api } from '../lib/api'
 import { getPendingAssessments, markAsSynced, getPhotosForAssessment } from '../lib/db'
+import { ASSESSMENT_CONDITION_LIST, ASSESSMENT_CONDITION } from '../lib/statuses'
 
 const COND_COLOR = {
   Good: 'text-green-400',
@@ -199,7 +200,7 @@ if (result) {
           className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-blue-500"
         />
         <div className="flex gap-2">
-          {['All', 'Good', 'Moderate', 'Bad'].map(c => (
+          {ASSESSMENT_CONDITION_LIST.map(c => (
             <button
               key={c}
               onClick={() => setFilterCondition(c)}

@@ -1,29 +1,52 @@
 import { openDB } from 'idb'
+import { SYNC_STATUS } from './statuses'
 
 const DB_NAME = 'flood-assessment-db'
-const DB_VERSION = 2
+const DB_VERSION = 3
 
 export async function getDB() {
   return openDB(DB_NAME, DB_VERSION, {
-    upgrade(db) {
-    
-  // Assessments store
-  if (!db.objectStoreNames.contains('assessments')) {
-    const store = db.createObjectStore('assessments', { keyPath: 'id' })
-    store.createIndex('syncStatus', 'syncStatus')
-    store.createIndex('createdAt', 'createdAt')
-  }
-  // Photos store
-  if (!db.objectStoreNames.contains('photos')) {
-    const photoStore = db.createObjectStore('photos', { keyPath: 'id' })
-    photoStore.createIndex('assessmentId', 'assessmentId')
-  }
-  // Farms store — NEW
-  if (!db.objectStoreNames.contains('farms')) {
-    const farmStore = db.createObjectStore('farms', { keyPath: 'id' })
-    farmStore.createIndex('assignedToName', 'assignedToName')
-  }
+    upgrade(db, oldVersion, newVersion, transaction) {
+      // Assessments store
+      if (!db.objectStoreNames.contains('assessments')) {
+        const store = db.createObjectStore('assessments', { keyPath: 'id' })
+        store.createIndex('syncStatus', 'syncStatus')
+        store.createIndex('createdAt', 'createdAt')
+        store.createIndex('farmId', 'farmId')
+      } else {
+        const store = transaction.objectStore('assessments')
+        if (!store.indexNames.contains('syncStatus')) {
+          store.createIndex('syncStatus', 'syncStatus')
+        }
+        if (!store.indexNames.contains('createdAt')) {
+          store.createIndex('createdAt', 'createdAt')
+        }
+        if (!store.indexNames.contains('farmId')) {
+          store.createIndex('farmId', 'farmId')
+        }
+      }
 
+      // Photos store
+      if (!db.objectStoreNames.contains('photos')) {
+        const photoStore = db.createObjectStore('photos', { keyPath: 'id' })
+        photoStore.createIndex('assessmentId', 'assessmentId')
+      } else {
+        const photoStore = transaction.objectStore('photos')
+        if (!photoStore.indexNames.contains('assessmentId')) {
+          photoStore.createIndex('assessmentId', 'assessmentId')
+        }
+      }
+
+      // Farms store
+      if (!db.objectStoreNames.contains('farms')) {
+        const farmStore = db.createObjectStore('farms', { keyPath: 'id' })
+        farmStore.createIndex('assignedToName', 'assignedToName')
+      } else {
+        const farmStore = transaction.objectStore('farms')
+        if (!farmStore.indexNames.contains('assignedToName')) {
+          farmStore.createIndex('assignedToName', 'assignedToName')
+        }
+      }
     }
   })
 }
@@ -77,14 +100,14 @@ export async function deletePhoto(photoId) {
 
 export async function getPendingAssessments() {
   const db = await getDB()
-  return db.getAllFromIndex('assessments', 'syncStatus', 'pending')
+  return db.getAllFromIndex('assessments', 'syncStatus', SYNC_STATUS.Pending)
 }
 
 export async function markAsSynced(id) {
   const db = await getDB()
   const assessment = await db.get('assessments', id)
   if (assessment) {
-    assessment.syncStatus = 'synced'
+    assessment.syncStatus = SYNC_STATUS.Synced
     assessment.syncedAt = new Date().toISOString()
     await db.put('assessments', assessment)
   }
@@ -128,4 +151,28 @@ export async function getFarmsByAssignee(userName) {
   const db = await getDB()
   const farms = await db.getAll('farms')
   return farms.filter(f => f.assignedToName === userName)
+}
+
+export async function getByFarmId(farmId) {
+  if (!farmId) return []
+  const db = await getDB()
+  return db.getAllFromIndex('assessments', 'farmId', farmId)
+}
+
+export const dbOperations = {
+  getDB,
+  saveAssessment,
+  getAllAssessments,
+  getAssessment,
+  deleteAssessment,
+  savePhoto,
+  getPhotosForAssessment,
+  deletePhoto,
+  getPendingAssessments,
+  markAsSynced,
+  getStats,
+  saveFarms,
+  getAllFarms,
+  getFarmsByAssignee,
+  getByFarmId
 }
